@@ -1,0 +1,26 @@
+Built:
+
+Profile form ✅
+Database ✅
+Validation ✅
+CSS styling ✅
+Environment variables ✅
+
+Building now:
+
+AI profile summary + networking tip
+
+Build later:
+
+Login / registration system
+Events system (create, book, get reminders)
+People you met / connections tracker
+AI profile matching (similar careers/roles)
+Follow up reminders
+CSRF protection
+Deployment (go live on internet)
+
+
+Does that capture everything? Anything to add or change before we get back to the AI integration?okay i will save it on my networking folder6:37 PMSmart — save it as roadmap.txt or README.md in your project folder.
+README.md is actually the standard in development — it's the file that describes what your project is and where it's going. GitHub displays it automatically when you share your project.
+Save it and then let's get back to writing that AI prompt! 😄
