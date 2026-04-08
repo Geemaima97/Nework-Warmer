@@ -18,11 +18,9 @@ print("Environment variables loaded successfully!")
 app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY')
 csrf = CSRFProtect(app)
-@app.route('/', methods=['GET'])
-def form():
-    if 'email' not in session:
-      return redirect('/login')
-    return render_template('forms.html')
+@app.route('/')
+def landing():
+    return render_template('landing.html')
    
 
 @app.route('/submit-profile', methods=['POST'])
@@ -110,7 +108,7 @@ def register():
         conn.close()
         print ("Registration Successful!")
         session['email'] = email
-        return redirect('/')
+        return redirect('/profile')
 
     return render_template('registration.html')  
 @app.route('/login', methods=['GET', 'POST'])
@@ -128,7 +126,7 @@ def login():
         if result and checkpw(password.encode('utf-8'), result[0]):
             print("Login successful!")
             session['email'] = email
-            return redirect('/')
+            return redirect('/profile')
         else:
             print("Login failed!")
             return render_template('login.html', error='Invalid email or password.')
@@ -136,4 +134,11 @@ def login():
     return render_template('login.html')
 
 
+@app.route('/profile', methods=['GET'])
+def profile():
+    if 'email' not in session:
+        return redirect('/login')
+    return render_template('forms.html')
 
+if __name__ == '__main__':
+    app.run(debug=True)
