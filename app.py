@@ -109,7 +109,8 @@ def register():
         conn.commit()
         conn.close()
         print ("Registration Successful!")
-        return redirect('/login')
+        session['email'] = email
+        return redirect('/')
 
     return render_template('registration.html')  
 @app.route('/login', methods=['GET', 'POST'])
