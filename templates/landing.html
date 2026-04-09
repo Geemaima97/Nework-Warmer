@@ -1,13 +1,7 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NetWorth - Network Warmer. Connect Deeper.</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+{% extends 'base.html' %}
 
-</head>
-<body>
+{% block content %}
+
 
     <div class="landing">
        <h1>Stop collecting business cards. Start building your inner circle.</h1>
@@ -41,6 +35,4 @@
     </div>
 
     
-    
-</body>
-</html>
+{% endblock %}
