@@ -145,3 +145,9 @@ input[type="submit"]:hover {
     font-size: 0.9em;
     color: #555;
 }
+#spinner {
+    text-align: center;
+    padding: 15px;
+    color: purple;
+    font-size: 1.1em;
+}

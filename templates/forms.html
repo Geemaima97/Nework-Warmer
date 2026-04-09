@@ -14,7 +14,6 @@
     <p class="error">{{ error }}</p>
     {% endif %}
 
-
     <label for="name">Name:</label>
     <input type="text" id="name" name="name" required maxlength="100"><br>
     <label for="email">Email:</label>
@@ -25,8 +24,20 @@
     <input type="text" id="career" name="career" maxlength="100"><br>
     <label for="role">Role:</label>
     <input type="text" id="role" name="role" maxlength="100"><br>
-    <input type="submit" value="Submit">
     
+    <div id="spinner" style="display:none;">
+        ⏳ Analyzing your profile...
+    </div>
+    <input type="submit" value="Submit">
+
     </form>
+    
+    <script>
+    document.querySelector('form').addEventListener('submit', function() {
+        document.getElementById('spinner').style.display = 'block';
+        document.querySelector('input[type="submit"]').style.display = 'none';
+    });
+    </script>
+    
 </body>
 </html>
