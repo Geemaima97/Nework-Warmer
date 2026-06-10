@@ -1,5 +1,7 @@
 from flask import Flask, redirect, render_template, request, session
 from flask_wtf.csrf import CSRFProtect
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 import sqlite3
 from dotenv import load_dotenv
 import os
@@ -18,6 +20,13 @@ print("Environment variables loaded successfully!")
 app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY')
 csrf = CSRFProtect(app)
+
+limiter = Limiter(
+    get_remote_address,
+    app=app,
+    default_limits=["200 per day", "50 per hour"]
+)
+
 @app.route('/')
 def landing():
    return render_template('landing.html')
@@ -80,6 +89,7 @@ def submit_form():
     return render_template('results.html', summary=summary, tip=tip)
    
 @app.route('/register', methods=['GET', 'POST'])
+@limiter.limit("3 per minute")
 def register():
     
     if request.method == 'POST':
@@ -112,6 +122,7 @@ def register():
 
     return render_template('registration.html')  
 @app.route('/login', methods=['GET', 'POST'])
+@limiter.limit("5 per minute")
 def login():
     if request.method == 'POST':
         email = request.form['email']
