@@ -149,7 +149,21 @@ def login():
 def profile():
     if 'email' not in session:
         return redirect('/login')
-    return render_template('forms.html')
+    
+    conn = sqlite3.connect('networking.db')
+    cursor = conn.cursor()
+    cursor.execute('SELECT name, email, phone, career, role FROM profiles WHERE email = ?', (session['email'],))
+    user_profile = cursor.fetchone()
+    conn.close()
+    if user_profile:
+        return render_template('profile.html', profile=profile_data)
+    else:
+        return render_template('forms.html')
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect('/')
 
 if __name__ == '__main__':
     app.run(debug=True)
