@@ -156,7 +156,7 @@ def profile():
     user_profile = cursor.fetchone()
     conn.close()
     if user_profile:
-        return render_template('profile.html', profile=profile_data)
+        return render_template('profile.html', profile=user_profile)
     else:
         return render_template('forms.html')
 
