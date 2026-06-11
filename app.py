@@ -59,6 +59,7 @@ def submit_form():
 
     print(f'Name: {full_name}')
     print(f'Email: {email}')
+
     print(f'Phone: {phone}')
     print(f'Career: {career}')
     print(f'Role: {role}')
