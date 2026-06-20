@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>My Matches</h1>
+
+{% if not matches %}
+    <p>No matches found.</p>
+{% endif %}
+
+{% for match in matches %}
+
+    <div class="profile-card">
+        <h3>{{ match.profile[0] }}</h3>
+        <p><strong>Career:</strong> {{ match.profile[3] }}</p>
+        <p><strong>Role:</strong> {{ match.profile[4] }}</p>
+        <p><strong>Industry:</strong> {{ match.profile[5] }}</p>
+        <p><strong>Looking For:</strong> {{ match.profile[6] }}</p>
+        <p><strong>Match:</strong> {{ match.match }}</p>
+        <p><strong>Reason:</strong> {{ match.reason }}</p>
+
+    </div>
+{% endfor %}
+{% endblock %}

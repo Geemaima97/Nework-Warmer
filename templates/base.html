@@ -21,6 +21,7 @@
         {% if session['email'] %}
             <li class="nav-user">👤 {{ session['username'] }}</li>
             <li><a href="/profile">Profile</a></li>
+            <li><a href="/matches">Matches</a></li>     
             <li><a href="/logout">Logout</a></li>
         {% else %}
             <li><a href="/login">Login</a></li>

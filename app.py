@@ -44,6 +44,9 @@ def submit_form():
     phone = request.form['phone']
     career = request.form.get('career')
     role = request.form.get('role')
+    industry = request.form.get('industry')
+    looking_for = request.form.get('looking_for')
+
 
     
     if len(full_name) < 2 or len(full_name) > 100:
@@ -67,13 +70,12 @@ def submit_form():
 
     conn = sqlite3.connect('networking.db')
     cursor = conn.cursor()
-    cursor.execute( 'CREATE TABLE IF NOT EXISTS profiles (name, email, phone, career, role)')
-    cursor.execute('INSERT INTO profiles (name, email, phone, career, role) VALUES (?, ?, ?, ?, ?)', (full_name, email, phone, career, role))
+    cursor.execute('INSERT INTO profiles (name, email, phone, career, role, industry, looking_for) VALUES (?, ?, ?, ?, ?, ?, ?)', (full_name, email, phone, career, role, industry, looking_for))
     conn.commit()
     conn.close()
     
    
-    prompt = (f'Write a short summary and networking tip for someone who works in {career} as a {role}. Return as JSON with keys "summary" and "tip".')
+    prompt = (f'Write a short summary and networking tip for someone who works in {career} as a {role} in the {industry} industry looking for {looking_for}. Return as JSON with keys "summary" and "tip".')
     response = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[
@@ -153,7 +155,7 @@ def profile():
     
     conn = sqlite3.connect('networking.db')
     cursor = conn.cursor()
-    cursor.execute('SELECT name, email, phone, career, role FROM profiles WHERE email = ?', (session['email'],))
+    cursor.execute('SELECT name, email, phone, career, role, industry, looking_for FROM profiles WHERE email = ?', (session['email'],))
     user_profile = cursor.fetchone()
     conn.close()
     if user_profile:
@@ -165,6 +167,54 @@ def profile():
 def logout():
     session.clear()
     return redirect('/')
+
+@app.route('/matches')
+def matches():
+    if 'email' not in session:
+        return redirect('/login')
+    
+    conn = sqlite3.connect('networking.db')
+    cursor = conn.cursor()
+    cursor.execute('SELECT name, email, phone, career, role, industry, looking_for FROM profiles WHERE email = ?', (session['email'],))
+    current_user = cursor.fetchone() 
+    cursor.execute('SELECT name, email, phone, career, role, industry, looking_for FROM profiles WHERE email != ?', (session['email'],))
+
+    all_profiles = cursor.fetchall()
+    conn.close()
+    
+    matches_result = []
+    for profile in all_profiles:
+            prompt = f"""You are a strict professional networking matchmaker. Be skeptical — only recommend a match if there is a clear, specific reason these two people would benefit from connecting.
+
+Person 1: {current_user[0]}, works in {current_user[3]} as {current_user[4]}, industry: {current_user[5]}, looking for: {current_user[6]}
+Person 2: {profile[0]}, works in {profile[3]} as {profile[4]}, industry: {profile[5]}, looking for: {profile[6]}
+
+A good match requires complementary intent — for example, one person offering what the other is looking for, shared industry with different specialties, or a clear mentor/mentee fit. Two people who both want the same thing (e.g. both seeking mentors) are NOT a good match.
+
+Return JSON with keys "match" (yes or no), "reason" (one specific sentence), and "confidence" (a number 1-10)."""
+
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": prompt}]
+        )
+        result = response.choices[0].message.content
+        result = result.strip().removeprefix('```json').removesuffix('```').strip()
+        data = json.loads(result)
+        matches_result.append({
+            'profile': profile,
+            'match': data['match'],
+            'reason': data['reason']
+        })
+    except Exception as e:
+        print(f"Match error for {profile[0]}: {e}")
+        matches_result.append({
+            'profile': profile,
+            'match': 'unknown',
+            'reason': 'Could not generate match at this time.'
+        })
+
+    return render_template('matches.html', matches=matches_result)
 
 if __name__ == '__main__':
     app.run(debug=True)

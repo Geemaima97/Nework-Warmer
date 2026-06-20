@@ -107,6 +107,25 @@ input[type="submit"]:hover {
     font-size: 1em;
     font-weight: bold;
 }
+.profile-card {
+    background-color: white;
+    width: 400px;
+    margin: 50px auto;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.profile-card h1 {
+    color: purple;
+    margin-bottom: 20px;
+}
+
+.profile-card p {
+    padding: 10px 0;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 1em;
+}
 
 .landing a:first-of-type {
     background-color: purple;
