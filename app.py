@@ -9,6 +9,7 @@ from pathlib import Path
 from openai import OpenAI
 import json
 from bcrypt import hashpw, gensalt, checkpw 
+from datetime import timedelta
 
 load_dotenv(Path(__file__).parent / '.env')
 openai_api_key = os.getenv('OPENAI_API_KEY')
@@ -19,6 +20,7 @@ print("Environment variables loaded successfully!")
 
 app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY')
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=30)
 csrf = CSRFProtect(app)
 
 limiter = Limiter(
@@ -121,6 +123,7 @@ def register():
         conn.close()
         print ("Registration Successful!")
         session['email'] = email
+        session.permanent = True
         return redirect('/profile')
 
     return render_template('registration.html')  
@@ -140,6 +143,7 @@ def login():
         if result and checkpw(password.encode('utf-8'), result[0]):
             print("Login successful!")
             session['email'] = email
+            session.permanent = True
             return redirect('/profile')
         else:
             print("Login failed!")

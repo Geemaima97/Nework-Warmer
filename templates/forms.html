@@ -31,10 +31,11 @@
     </form>
     
     <script>
-    document.querySelector('form').addEventListener('submit', function() {
-        document.getElementById('spinner').style.display = 'block';
-        document.querySelector('input[type="submit"]').style.display = 'none';
-    });
+        const form = document.querySelector('form');
+        const spinner = document.getElementById('spinner');
+
+        form.addEventListener('submit', function() {
+            spinner.style.display = 'block';
+        });
     </script>
-    
 {% endblock %}

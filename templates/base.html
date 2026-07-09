@@ -20,7 +20,7 @@
     <ul class="nav-links" id="nav-links">
         {% if session['email'] %}
             <li class="nav-user">👤 {{ session['username'] }}</li>
-            <li><a href="/profile">Profile</a></li>
+            <li><a href="/profile">Profile</a></li> 
             <li><a href="/matches">Matches</a></li>     
             <li><a href="/logout">Logout</a></li>
         {% else %}
@@ -29,15 +29,26 @@
         {% endif %}
     </ul>
 </nav>
-
+     <div id="loading-overlay" style="display:none; text-align:center; padding:40px; font-size:1.2em; color:purple;">
+    ⏳ Finding your matches...
+     </div>
 {% block content %}{% endblock %}
 
+
 <script>
-    function toggleMenu() {
-        const nav = document.getElementById('nav-links');
-        nav.classList.toggle('open');
-    }
+function toggleMenu() {
+    const navLinks = document.getElementById('nav-links');
+    navLinks.classList.toggle('active');
+}
+
+document.querySelector('a[href="/matches"]').addEventListener('click', function() {
+    document.getElementById('loading-overlay').style.display = 'block';
+});
 </script>
+
+
+
+
     
 </body>
 </html>
