@@ -18,6 +18,16 @@ cursor.execute('''CREATE TABLE IF NOT EXISTS users (
     username TEXT,
     password TEXT
 )''')
+
+cursor.execute('''CREATE TABLE IF NOT EXISTS matches (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user1_email TEXT,
+    user2_email TEXT,
+    match TEXT,
+    reason TEXT,
+    confidence TEXT
+)''')
+
 conn.commit()
 conn.close()
 

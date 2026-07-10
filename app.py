@@ -184,8 +184,14 @@ def matches():
     cursor.execute('SELECT name, email, phone, career, role, industry, looking_for FROM profiles WHERE email != ?', (session['email'],))
 
     all_profiles = cursor.fetchall()
+
+    cursor.execute('SELECT user1_email, user2_email, match, reason FROM matches WHERE user1_email = ? OR user2_email = ?', (session['email'], session['email']))
+    existing_matches = cursor.fetchall()
     conn.close()
-    
+
+    if existing_matches:
+       return render_template('matches.html', matches=existing_matches)
+
     matches_result = []
     for profile in all_profiles:
             prompt = f"""You are a strict professional networking matchmaker. Be skeptical — only recommend a match if there is a clear, specific reason these two people would benefit from connecting.
