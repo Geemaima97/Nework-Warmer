@@ -187,14 +187,15 @@ def matches():
 
     cursor.execute('SELECT user1_email, user2_email, match, reason FROM matches WHERE user1_email = ? OR user2_email = ?', (session['email'], session['email']))
     existing_matches = cursor.fetchall()
-    conn.close()
+   
 
     if existing_matches:
+       conn.close()
        return render_template('matches.html', matches=existing_matches)
 
     matches_result = []
     for profile in all_profiles:
-            prompt = f"""You are a strict professional networking matchmaker. Be skeptical — only recommend a match if there is a clear, specific reason these two people would benefit from connecting.
+        prompt = f"""You are a strict professional networking matchmaker. Be skeptical — only recommend a match if there is a clear, specific reason these two people would benefit from connecting.
 
 Person 1: {current_user[0]}, works in {current_user[3]} as {current_user[4]}, industry: {current_user[5]}, looking for: {current_user[6]}
 Person 2: {profile[0]}, works in {profile[3]} as {profile[4]}, industry: {profile[5]}, looking for: {profile[6]}
@@ -203,26 +204,32 @@ A good match requires complementary intent — for example, one person offering 
 
 Return JSON with keys "match" (yes or no), "reason" (one specific sentence), and "confidence" (a number 1-10)."""
 
-    try:
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[{"role": "user", "content": prompt}]
-        )
-        result = response.choices[0].message.content
-        result = result.strip().removeprefix('```json').removesuffix('```').strip()
-        data = json.loads(result)
-        matches_result.append({
-            'profile': profile,
-            'match': data['match'],
-            'reason': data['reason']
-        })
-    except Exception as e:
-        print(f"Match error for {profile[0]}: {e}")
-        matches_result.append({
-            'profile': profile,
-            'match': 'unknown',
-            'reason': 'Could not generate match at this time.'
-        })
+        try:
+            response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[{"role": "user", "content": prompt}]
+            )
+            result = response.choices[0].message.content
+            result = result.strip().removeprefix('```json').removesuffix('```').strip()
+            data = json.loads(result)
+            matches_result.append({
+                'profile': profile,
+                'match': data['match'],
+                'reason': data['reason']
+            })
+
+            cursor.execute('INSERT INTO matches (user1_email, user2_email, match, reason, confidence) VALUES (?, ?, ?, ?, ?)',
+            (session['email'], profile[1], data['match'], data['reason'], data['confidence']))
+        except Exception as e:
+            print(f"Match error for {profile[0]}: {e}")
+            matches_result.append({
+                'profile': profile,
+                'match': 'unknown',
+                'reason': 'Could not generate match at this time.'
+            })
+
+    conn.commit()
+    conn.close()
 
     return render_template('matches.html', matches=matches_result)
 
