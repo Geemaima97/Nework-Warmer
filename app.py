@@ -1,3 +1,5 @@
+from urllib import response
+
 from flask import Flask, redirect, render_template, request, session
 from flask_wtf.csrf import CSRFProtect
 from flask_limiter import Limiter
@@ -10,10 +12,15 @@ from openai import OpenAI
 import json
 from bcrypt import hashpw, gensalt, checkpw 
 from datetime import timedelta
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail
+import ssl
+ssl._create_default_https_context = ssl._create_unverified_context
 
 load_dotenv(Path(__file__).parent / '.env')
 openai_api_key = os.getenv('OPENAI_API_KEY')
 secret_key = os.getenv('SECRET_KEY')
+sendgrid_api_key = os.getenv('SENDGRID_API_KEY')
 client = OpenAI(api_key=openai_api_key)
 print("Environment variables loaded successfully!") 
 
@@ -28,6 +35,27 @@ limiter = Limiter(
     app=app,
     default_limits=["200 per day", "50 per hour"]
 )
+
+def send_email(to_email, match_name, match_career, match_reason):
+    message = Mail( 
+        from_email=os.getenv('SENDER_EMAIL'),
+        to_emails=to_email,
+        subject='You have a new match on NetWorth! 🤝',
+        html_content=f'''
+        <h2>You matched with {match_name}!</h2>
+        <p><strong>Why you matched:</strong> {match_reason}</p>
+        <p><strong>Their career:</strong> {match_career}</p>
+        <p>Don't let this connection go cold — reach out and grab a coffee or hop on a Zoom!</p>
+        <a href="https://neworking-app.onrender.com/matches">View your matches</a>
+        '''
+    )
+    try:
+        sendgrid = SendGridAPIClient(os.getenv('SENDGRID_API_KEY'))
+        sendgrid.send(message)
+        print(f"Email sent to {to_email}")
+    except Exception as e:
+        print(f"Email error: {e}")
+        
 
 @app.route('/')
 def landing():
@@ -190,8 +218,17 @@ def matches():
    
 
     if existing_matches:
-       conn.close()
-       return render_template('matches.html', matches=existing_matches)
+        matches_result = []
+        for em in existing_matches:
+            cursor.execute('SELECT name, email, phone, career, role, industry, looking_for FROM profiles WHERE email = ?', (em[1],))
+            profile = cursor.fetchone()
+            matches_result.append({
+                'profile': profile,
+                'match': em[2],
+                'reason': em[3]
+            })
+        conn.close()
+        return render_template('matches.html', matches=matches_result)
 
     matches_result = []
     for profile in all_profiles:
@@ -220,6 +257,13 @@ Return JSON with keys "match" (yes or no), "reason" (one specific sentence), and
 
             cursor.execute('INSERT INTO matches (user1_email, user2_email, match, reason, confidence) VALUES (?, ?, ?, ?, ?)',
             (session['email'], profile[1], data['match'], data['reason'], data['confidence']))
+            send_email(
+                session['email'],
+                profile[0],
+                profile[3],
+                data['reason']
+                )
+            
         except Exception as e:
             print(f"Match error for {profile[0]}: {e}")
             matches_result.append({
