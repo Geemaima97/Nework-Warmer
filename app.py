@@ -50,7 +50,7 @@ def send_email(to_email, match_name, match_career, match_reason):
         '''
     )
     try:
-        sendgrid = SendGridAPIClient(os.getenv('SENDGRID_API_KEY'))
+        sendgrid = SendGridAPIClient(os.geenv('SENDGRID_API_KEY'))
         sendgrid.send(message)
         print(f"Email sent to {to_email}")
     except Exception as e:
@@ -76,6 +76,7 @@ def submit_form():
     role = request.form.get('role')
     industry = request.form.get('industry')
     looking_for = request.form.get('looking_for')
+   
 
 
     
@@ -98,27 +99,36 @@ def submit_form():
     print(f'Role: {role}')
 
 
-    conn = sqlite3.connect('networking.db')
-    cursor = conn.cursor()
-    cursor.execute('INSERT INTO profiles (name, email, phone, career, role, industry, looking_for) VALUES (?, ?, ?, ?, ?, ?, ?)', (full_name, email, phone, career, role, industry, looking_for))
-    conn.commit()
-    conn.close()
     
    
-    prompt = (f'Write a short summary and networking tip for someone who works in {career} as a {role} in the {industry} industry looking for {looking_for}. Return as JSON with keys "summary" and "tip".')
+    prompt = (f'Write a short summary and networking tip for {full_name} who works in {career} as a {role} in the {industry} industry looking for {looking_for}. '
+          f'They are attending a professional networking event in the Bay Area. '
+          f'The tip should be specific to their role as a {role} and their goal of finding {looking_for}, not generic advice. '
+          f'Write in a warm, encouraging, human tone. '
+          f'Return as JSON with keys "summary" and "tip".')
     response = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[
             {"role": "user", "content": prompt}
         ]
     )
+
     result = response.choices[0].message.content
     print(f"AI returned: {result}")
     result = result.strip().removeprefix('```json').removesuffix('```').strip()
-    
+
+
     data = json.loads(result)
     summary = data['summary']
     tip = data['tip']
+
+    conn = sqlite3.connect('networking.db')
+    cursor = conn.cursor()
+    cursor.execute('INSERT INTO profiles (name, email, phone, career, role, industry, looking_for, summary, tip) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', (full_name, email, phone, career, role, industry, looking_for, summary, tip))
+    conn.commit()
+    conn.close()
+        
+    
     return render_template('results.html', summary=summary, tip=tip)
    
 @app.route('/register', methods=['GET', 'POST'])
@@ -239,7 +249,7 @@ Person 2: {profile[0]}, works in {profile[3]} as {profile[4]}, industry: {profil
 
 A good match requires complementary intent — for example, one person offering what the other is looking for, shared industry with different specialties, or a clear mentor/mentee fit. Two people who both want the same thing (e.g. both seeking mentors) are NOT a good match.
 
-Return JSON with keys "match" (yes or no), "reason" (one specific sentence), and "confidence" (a number 1-10)."""
+Return JSON with keys "match" (yes or no), "reason" (one specific sentence), and "confidence" (a number 1-10)and "suggestion" (one sentence recommending coffee or Zoom and what to discuss)."""
 
         try:
             response = client.chat.completions.create(
@@ -252,11 +262,13 @@ Return JSON with keys "match" (yes or no), "reason" (one specific sentence), and
             matches_result.append({
                 'profile': profile,
                 'match': data['match'],
-                'reason': data['reason']
+                'reason': data['reason'],
+                'confidence': data['confidence'],
+                'suggestion': data['suggestion']
             })
 
-            cursor.execute('INSERT INTO matches (user1_email, user2_email, match, reason, confidence) VALUES (?, ?, ?, ?, ?)',
-            (session['email'], profile[1], data['match'], data['reason'], data['confidence']))
+            cursor.execute('INSERT INTO matches (user1_email, user2_email, match, reason, confidence) VALUES (?, ?, ?, ?, ?, ?)',
+            (session['email'], profile[1], data['match'], data['reason'], data['confidence'], data['suggestion']))
             send_email(
                 session['email'],
                 profile[0],
@@ -269,7 +281,10 @@ Return JSON with keys "match" (yes or no), "reason" (one specific sentence), and
             matches_result.append({
                 'profile': profile,
                 'match': 'unknown',
-                'reason': 'Could not generate match at this time.'
+                'reason': 'Could not generate match at this time.',
+                'confidence': 'N/A',
+                'suggestion': 'Could not generate suggestion at this time.'
+
             })
 
     conn.commit()
@@ -282,7 +297,8 @@ def init_db():
     cursor.execute('''CREATE TABLE IF NOT EXISTS profiles (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT, email TEXT, phone TEXT,
-        career TEXT, role TEXT, industry TEXT, looking_for TEXT
+        career TEXT, role TEXT, industry TEXT, looking_for TEXT,
+        summary TEXT, tip TEXT
     )''')
     cursor.execute('''CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -291,7 +307,7 @@ def init_db():
     cursor.execute('''CREATE TABLE IF NOT EXISTS matches (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user1_email TEXT, user2_email TEXT,
-        match TEXT, reason TEXT, confidence TEXT
+        match TEXT, reason TEXT, confidence TEXT, suggestion TEXT
     )''')
     conn.commit()
     conn.close()
