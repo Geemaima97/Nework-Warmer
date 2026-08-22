@@ -50,7 +50,7 @@ def send_email(to_email, match_name, match_career, match_reason):
         '''
     )
     try:
-        sendgrid = SendGridAPIClient(os.geenv('SENDGRID_API_KEY'))
+        sendgrid = SendGridAPIClient(os.getenv('SENDGRID_API_KEY'))
         sendgrid.send(message)
         print(f"Email sent to {to_email}")
     except Exception as e:
@@ -154,7 +154,7 @@ def register():
         print(f'Username: {username}')  
         conn = sqlite3.connect('networking.db')
         cursor = conn.cursor()
-        conn.execute( 'CREATE TABLE IF NOT EXISTS users (id, email, username, password)')
+      
         conn.execute('INSERT INTO users (id, email, username, password) VALUES (?, ?, ?, ?)', (None, email, username, hashed_password))
         conn.commit()
         conn.close()
@@ -196,7 +196,7 @@ def profile():
     
     conn = sqlite3.connect('networking.db')
     cursor = conn.cursor()
-    cursor.execute('SELECT name, email, phone, career, role, industry, looking_for FROM profiles WHERE email = ?', (session['email'],))
+    cursor.execute('SELECT name, email, phone, career, role, industry, looking_for, summary, tip FROM profiles WHERE email = ?', (session['email'],))
     user_profile = cursor.fetchone()
     conn.close()
     if user_profile:
@@ -218,7 +218,7 @@ def matches():
     cursor = conn.cursor()
     cursor.execute('SELECT name, email, phone, career, role, industry, looking_for FROM profiles WHERE email = ?', (session['email'],))
     current_user = cursor.fetchone()
-    current_user = cursor.fetchone()
+   
 
     if not current_user:
         conn.close()
@@ -271,7 +271,7 @@ Return JSON with keys "match" (yes or no), "reason" (one specific sentence), and
                 'suggestion': data['suggestion']
             })
 
-            cursor.execute('INSERT INTO matches (user1_email, user2_email, match, reason, confidence) VALUES (?, ?, ?, ?, ?, ?)',
+            cursor.execute('INSERT INTO matches (user1_email, user2_email, match, reason, confidence, suggestion) VALUES (?, ?, ?, ?, ?, ?)',
             (session['email'], profile[1], data['match'], data['reason'], data['confidence'], data['suggestion']))
             send_email(
                 session['email'],
