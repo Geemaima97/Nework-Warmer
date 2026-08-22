@@ -4,7 +4,7 @@ from flask import Flask, redirect, render_template, request, session
 from flask_wtf.csrf import CSRFProtect
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-import sqlite3
+import psycopg2
 from dotenv import load_dotenv
 import os
 from pathlib import Path
@@ -121,9 +121,9 @@ def submit_form():
     summary = data['summary']
     tip = data['tip']
 
-    conn = sqlite3.connect('networking.db')
+    conn =get_db()
     cursor = conn.cursor()
-    cursor.execute('INSERT INTO profiles (name, email, phone, career, role, industry, looking_for, summary, tip) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', (full_name, email, phone, career, role, industry, looking_for, summary, tip))
+    cursor.execute('INSERT INTO profiles (name, email, phone, career, role, industry, looking_for, summary, tip) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)', (full_name, email, phone, career, role, industry, looking_for, summary, tip))
     conn.commit()
     conn.close()
         
@@ -152,10 +152,10 @@ def register():
 
         print(f'Email: {email}')
         print(f'Username: {username}')  
-        conn = sqlite3.connect('networking.db')
+        conn = get_db()
         cursor = conn.cursor()
       
-        conn.execute('INSERT INTO users (id, email, username, password) VALUES (?, ?, ?, ?)', (None, email, username, hashed_password))
+        cursor.execute('INSERT INTO users (id, email, username, password) VALUES (%s, %s, %s, %s)', (None, email, username, hashed_password))
         conn.commit()
         conn.close()
         print ("Registration Successful!")
@@ -170,9 +170,9 @@ def login():
     if request.method == 'POST':
         email = request.form['email']
         password = request.form['password']
-        conn = sqlite3.connect('networking.db')
+        conn = get_db()
         cursor = conn.cursor()
-        cursor.execute('SELECT password FROM users WHERE email = ?', (email,))
+        cursor.execute('SELECT password FROM users WHERE email = %s', (email,))
         result = cursor.fetchone()
         print(f"DB result: {result}")
         conn.close()
@@ -194,9 +194,9 @@ def profile():
     if 'email' not in session:
         return redirect('/login')
     
-    conn = sqlite3.connect('networking.db')
+    conn = get_db()
     cursor = conn.cursor()
-    cursor.execute('SELECT name, email, phone, career, role, industry, looking_for, summary, tip FROM profiles WHERE email = ?', (session['email'],))
+    cursor.execute('SELECT name, email, phone, career, role, industry, looking_for, summary, tip FROM profiles WHERE email = %s', (session['email'],))
     user_profile = cursor.fetchone()
     conn.close()
     if user_profile:
@@ -214,27 +214,27 @@ def matches():
     if 'email' not in session:
         return redirect('/login')
     
-    conn = sqlite3.connect('networking.db')
+    conn = get_db()
     cursor = conn.cursor()
-    cursor.execute('SELECT name, email, phone, career, role, industry, looking_for FROM profiles WHERE email = ?', (session['email'],))
+    cursor.execute('SELECT name, email, phone, career, role, industry, looking_for FROM profiles WHERE email = %s', (session['email'],))
     current_user = cursor.fetchone()
    
 
     if not current_user:
         conn.close()
         return redirect('/profile')
-    cursor.execute('SELECT name, email, phone, career, role, industry, looking_for FROM profiles WHERE email != ?', (session['email'],))
+    cursor.execute('SELECT name, email, phone, career, role, industry, looking_for FROM profiles WHERE email != %s', (session['email'],))
 
     all_profiles = cursor.fetchall()
 
-    cursor.execute('SELECT user1_email, user2_email, match, reason, suggestion FROM matches WHERE user1_email = ? OR user2_email = ?', (session['email'], session['email']))
+    cursor.execute('SELECT user1_email, user2_email, match, reason, suggestion FROM matches WHERE user1_email = %s OR user2_email = %s', (session['email'], session['email']))
     existing_matches = cursor.fetchall()
    
 
     if existing_matches:
         matches_result = []
         for em in existing_matches:
-            cursor.execute('SELECT name, email, phone, career, role, industry, looking_for FROM profiles WHERE email = ?', (em[1],))
+            cursor.execute('SELECT name, email, phone, career, role, industry, looking_for FROM profiles WHERE email = %s', (em[1],))
             profile = cursor.fetchone()
             matches_result.append({
                 'profile': profile,
@@ -271,7 +271,7 @@ Return JSON with keys "match" (yes or no), "reason" (one specific sentence), and
                 'suggestion': data['suggestion']
             })
 
-            cursor.execute('INSERT INTO matches (user1_email, user2_email, match, reason, confidence, suggestion) VALUES (?, ?, ?, ?, ?, ?)',
+            cursor.execute('INSERT INTO matches (user1_email, user2_email, match, reason, confidence, suggestion) VALUES (%s, %s, %s, %s, %s, %s)',
             (session['email'], profile[1], data['match'], data['reason'], data['confidence'], data['suggestion']))
             send_email(
                 session['email'],
@@ -295,21 +295,31 @@ Return JSON with keys "match" (yes or no), "reason" (one specific sentence), and
     conn.close()
 
     return render_template('matches.html', matches=matches_result)
+
+def get_db():
+    return psycopg2.connect(
+        host='/cloudsql/project-30fe226d-24d7-4267-a64:us-west1:networth-db',
+        database='networthdb',
+        user='postgres',
+        password=os.getenv('DB_PASSWORD')
+    )
+
+
 def init_db():
-    conn = sqlite3.connect('networking.db')
+    conn = get_db()
     cursor = conn.cursor()
     cursor.execute('''CREATE TABLE IF NOT EXISTS profiles (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        SERIAL PRIMARY KEY,
         name TEXT, email TEXT, phone TEXT,
         career TEXT, role TEXT, industry TEXT, looking_for TEXT,
         summary TEXT, tip TEXT
     )''')
     cursor.execute('''CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        SERIAL PRIMARY KEY,
         email TEXT, username TEXT, password TEXT
     )''')
     cursor.execute('''CREATE TABLE IF NOT EXISTS matches (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        SERIAL PRIMARY KEY,
         user1_email TEXT, user2_email TEXT,
         match TEXT, reason TEXT, confidence TEXT, suggestion TEXT
     )''')
