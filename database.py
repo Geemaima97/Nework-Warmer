@@ -10,7 +10,9 @@ cursor.execute('''CREATE TABLE IF NOT EXISTS profiles (
     career TEXT,
     role TEXT,
     industry TEXT,
-    looking_for TEXT
+    looking_for TEXT,
+    summary TEXT,
+    tip TEXT
 )''')
 cursor.execute('''CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,

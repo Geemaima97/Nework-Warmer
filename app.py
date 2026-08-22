@@ -217,12 +217,17 @@ def matches():
     conn = sqlite3.connect('networking.db')
     cursor = conn.cursor()
     cursor.execute('SELECT name, email, phone, career, role, industry, looking_for FROM profiles WHERE email = ?', (session['email'],))
-    current_user = cursor.fetchone() 
+    current_user = cursor.fetchone()
+    current_user = cursor.fetchone()
+
+    if not current_user:
+        conn.close()
+        return redirect('/profile')
     cursor.execute('SELECT name, email, phone, career, role, industry, looking_for FROM profiles WHERE email != ?', (session['email'],))
 
     all_profiles = cursor.fetchall()
 
-    cursor.execute('SELECT user1_email, user2_email, match, reason FROM matches WHERE user1_email = ? OR user2_email = ?', (session['email'], session['email']))
+    cursor.execute('SELECT user1_email, user2_email, match, reason, suggestion FROM matches WHERE user1_email = ? OR user2_email = ?', (session['email'], session['email']))
     existing_matches = cursor.fetchall()
    
 
