@@ -102,7 +102,6 @@ def submit_form():
     
    
     prompt = (f'Write a short summary and networking tip for {full_name} who works in {career} as a {role} in the {industry} industry looking for {looking_for}. '
-          f'They are attending a professional networking event in the Bay Area. '
           f'The tip should be specific to their role as a {role} and their goal of finding {looking_for}, not generic advice. '
           f'Write in a warm, encouraging, human tone. '
           f'Return as JSON with keys "summary" and "tip".')
