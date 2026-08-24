@@ -10,12 +10,12 @@ import os
 from pathlib import Path
 from openai import OpenAI
 import json
+import sqlite3
 from bcrypt import hashpw, gensalt, checkpw 
 from datetime import timedelta
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
-import ssl
-ssl._create_default_https_context = ssl._create_unverified_context
+
 
 load_dotenv(Path(__file__).parent / '.env')
 openai_api_key = os.getenv('OPENAI_API_KEY')
@@ -297,12 +297,15 @@ Return JSON with keys "match" (yes or no), "reason" (one specific sentence), and
     return render_template('matches.html', matches=matches_result)
 
 def get_db():
-    return psycopg2.connect(
-        host='/cloudsql/project-30fe226d-24d7-4267-a64:us-west1:networth-db',
-        database='networthdb',
-        user='postgres',
-        password=os.getenv('DB_PASSWORD')
-    )
+    if os.getenv('K_SERVICE'):  # running on Cloud Run
+        return psycopg2.connect(
+            host='/cloudsql/project-30fe226d-24d7-4267-a64:us-west1:networth-db',
+            database='networthdb',
+            user='postgres',
+            password=os.getenv('DB_PASSWORD')
+        )
+    else:  # running localy
+        return sqlite3.connect('networking.db')
 
 
 def init_db():
