@@ -4,7 +4,6 @@ from flask import Flask, redirect, render_template, request, session
 from flask_wtf.csrf import CSRFProtect
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-import psycopg2
 from dotenv import load_dotenv
 import os
 from pathlib import Path
