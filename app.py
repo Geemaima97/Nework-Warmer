@@ -297,16 +297,19 @@ Return JSON with keys "match" (yes or no), "reason" (one specific sentence), and
     return render_template('matches.html', matches=matches_result)
 
 def get_db():
-    if os.getenv('K_SERVICE'):  # running on Cloud Run
-        return psycopg2.connect(
-            host='/cloudsql/project-30fe226d-24d7-4267-a64:us-west1:networth-db',
-            database='networthdb',
+    if os.getenv('K_SERVICE'):
+        from google.cloud.sql.connector import Connector
+        connector = Connector()
+        conn = connector.connect(
+            'project-30fe226d-24d7-4267-a64:us-west1:networth-db',
+            'pg8000',
             user='postgres',
-            password=os.getenv('DB_PASSWORD')
+            password=os.getenv('DB_PASSWORD'),
+            db='networthdb'
         )
-    else:  # running localy
+        return conn
+    else:
         return sqlite3.connect('networking.db')
-
 
 def init_db():
     conn = get_db()
