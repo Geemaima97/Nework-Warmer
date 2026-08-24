@@ -314,19 +314,19 @@ def init_db():
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute('''CREATE TABLE IF NOT EXISTS profiles (
-        SERIAL PRIMARY KEY,
+        id SERIAL,
         name TEXT, email TEXT, phone TEXT,
         career TEXT, role TEXT, industry TEXT, looking_for TEXT,
-        summary TEXT, tip TEXT
+        summary TEXT, tip TEXT, PRIMARY KEY (id)
     )''')
     cursor.execute('''CREATE TABLE IF NOT EXISTS users (
-        SERIAL PRIMARY KEY,
-        email TEXT, username TEXT, password TEXT
+        id SERIAL,
+        email TEXT, username TEXT, password TEXT, PRIMARY KEY (id)
     )''')
     cursor.execute('''CREATE TABLE IF NOT EXISTS matches (
-        SERIAL PRIMARY KEY,
+        id SERIAL,
         user1_email TEXT, user2_email TEXT,
-        match TEXT, reason TEXT, confidence TEXT, suggestion TEXT
+        match TEXT, reason TEXT, confidence TEXT, suggestion TEXT, PRIMARY KEY (id)
     )''')
     conn.commit()
     conn.close()
